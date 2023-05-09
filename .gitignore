@@ -1,0 +1,7 @@
+.*
+!/.gitignore
+.env
+*.log
+weather.png
+weather_emoji_dict.json
+__pycache__/
