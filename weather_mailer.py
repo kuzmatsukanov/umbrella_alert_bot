@@ -38,7 +38,7 @@ class WeatherMailer:
         """
         Send alert if rain is going to be
         """
-        if any(w not in self.weather_dict['main'] for w in ["Rain", "Thunderstorm", "Drizzle"]):
+        if any(w in self.weather_dict['main'] for w in ["Rain", "Thunderstorm", "Drizzle"]):
             self.bot.send_message(self.chat_id,
                                   "☔️☂️Looks like it's going to rain today, don't forget to bring an umbrella!",
                                   disable_notification=False)
