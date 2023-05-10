@@ -28,8 +28,7 @@ class WeatherMailer:
         Request weather from openweathermap.org and send the report
         """
         # Get weather forecast and build plot
-        self.weather_dict = OpenweathermapParser(city=self.city,
-                                                 api_key=self.openweathermap_api_key).get_weather_dict()
+        self.weather_dict = OpenweathermapParser(city=self.city, api_key=self.openweathermap_api_key).weather_dict
         self.plot_path = PlotBuilder(self.weather_dict).plot_weather_ts()
         with open(self.plot_path, 'rb') as f:
             self.bot.send_photo(self.chat_id, f, caption="Have a nice day!", disable_notification=True)
@@ -38,7 +37,7 @@ class WeatherMailer:
         """
         Send alert if rain is going to be
         """
-        if any(w in self.weather_dict['main'] for w in ["Rain", "Thunderstorm", "Drizzle"]):
+        if any(w not in self.weather_dict['main'] for w in ["Rain", "Thunderstorm", "Drizzle"]):
             self.bot.send_message(self.chat_id,
                                   "☔️☂️Looks like it's going to rain today, don't forget to bring an umbrella!",
                                   disable_notification=False)
@@ -49,8 +48,10 @@ class WeatherMailer:
         :param report_time: str, time of weather report e.g. "08:00"
         :param alert_time: str, time of rain alert e.g. "08:30"
         """
-        schedule.every().day.at(report_time).do(self.send_weather_forecast)
-        schedule.every().day.at(alert_time).do(self.alert_umbrella)
+        # schedule.every().day.at(report_time).do(self.send_weather_forecast)
+        # schedule.every().day.at(alert_time).do(self.alert_umbrella)
+        schedule.every(10).seconds.do(self.send_weather_forecast)
+        schedule.every(10).seconds.do(self.alert_umbrella)
 
     @staticmethod
     def schedule_checker():
