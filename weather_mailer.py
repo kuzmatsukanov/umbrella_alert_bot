@@ -50,7 +50,7 @@ class WeatherMailer:
         :param alert_time: str, time of rain alert e.g. "08:30"
         """
         schedule.every().day.at(report_time).do(self.send_weather_forecast)
-        schedule.every().day.at(alert_time).do(self.send_weather_forecast)
+        schedule.every().day.at(alert_time).do(self.alert_umbrella)
 
     @staticmethod
     def schedule_checker():
