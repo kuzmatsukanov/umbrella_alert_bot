@@ -19,3 +19,7 @@ To run this project, you need to have the following:
 ## Usage
 
     Run the main.py script to start the bot
+
+## Author
+
+[@kuzmatsukanov](https://github.com/kuzmatsukanov)

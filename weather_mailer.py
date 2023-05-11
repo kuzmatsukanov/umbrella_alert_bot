@@ -1,5 +1,6 @@
 import telebot
 import schedule
+from threading import Thread
 from time import sleep
 from openweathermap_parser import OpenweathermapParser
 from plot_weather_graph import PlotBuilder
@@ -22,7 +23,8 @@ class WeatherMailer:
         self.chat_id = chat_id
         self.weather_dict = None
         self.plot_path = None
-
+        self.scheduler = schedule.Scheduler()
+        self.thread = Thread(target=self.schedule_checker)
     def send_weather_forecast(self):
         """
         Request weather from openweathermap.org and send the report
@@ -50,14 +52,19 @@ class WeatherMailer:
         """
         # schedule.every().day.at(report_time).do(self.send_weather_forecast)
         # schedule.every().day.at(alert_time).do(self.alert_umbrella)
-        schedule.every(10).seconds.do(self.send_weather_forecast)
-        schedule.every(10).seconds.do(self.alert_umbrella)
+        self.scheduler.clear()
+        self.scheduler.every(report_time).seconds.do(self.send_weather_forecast)
+        self.scheduler.every(report_time).seconds.do(self.alert_umbrella)
+        # TODO: to set correct schedule
 
-    @staticmethod
-    def schedule_checker():
+    def schedule_checker(self, time_step=1):
         """
         Checks the `schedule` library for pending jobs.
         """
         while True:
-            schedule.run_pending()
-            sleep(1)
+        #while not stop_flag.is_set():
+            self.scheduler.run_pending()
+            sleep(time_step)
+
+    def start_thread(self):
+        self.thread.start()
