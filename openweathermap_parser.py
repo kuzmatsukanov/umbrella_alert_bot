@@ -11,6 +11,8 @@ class OpenweathermapParser:
         """
         self.city = city
         self._api_key = api_key
+        self.weather_forecast = None
+        self.weather_dict = None
         self.request_weather_data()
         self.get_weather_dict()
 
@@ -23,16 +25,17 @@ class OpenweathermapParser:
         self.weather_forecast = None
         for attempt in range(1, max_attempts):
             try:
-                url = 'http://api.openweathermap.org/data/2.5/forecast?q={}&appid={}&units=metric'.format(self.city, self._api_key)
+                url = 'http://api.openweathermap.org/data/2.5/forecast?q={}&appid={}&units=metric'.format(self.city,
+                                                                                                          self._api_key)
                 response = requests.get(url)
                 self.weather_forecast = response.json()
-                #print(self.weather_forecast)
                 logger.info("Successfully fetched weather forecast on attempt {}".format(attempt))
                 return
             except requests.exceptions.RequestException as e:
-                logger.warning(f"Attempt {attempt}: Failed to fetch weather forecast.")
+                logger.warning(f"Attempt {attempt}: Failed to fetch weather forecast. Error message: {e}")
                 continue
         logger.error("Failed to fetch weather forecast after {} attempts.".format(max_attempts))
+
     def get_weather_dict(self):
         """
         Extracts relevant weather data from the current weather forecast

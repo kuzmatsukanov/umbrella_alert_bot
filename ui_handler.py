@@ -8,10 +8,11 @@ from telegram.ext import (
     PicklePersistence,
     filters,
 )
+from weather_mailer import WeatherMailer
 import os
 from dotenv import load_dotenv
 load_dotenv()
-from weather_mailer import WeatherMailer
+
 
 class UIHandler:
     def __init__(self):
@@ -21,18 +22,21 @@ class UIHandler:
             ["Done"],
         ]
         self.markup = ReplyKeyboardMarkup(self.reply_keyboard, one_time_keyboard=True)
-        pass
+        self.wm = None
+        self.user_data = None
 
     def launch_mailer_bot(self):
         """Launch the WeatherMailerBot"""
         self.wm = WeatherMailer(city=self.user_data['city'],
-                               openweathermap_api_key=os.getenv('OPENWEATHERMAP_TOKEN'),
-                               bot_api_key=os.getenv('TELEGRAMBOT_TOKEN'),
-                               chat_id=os.getenv('TELEGRAM_CHAT_ID_ME'))
+                                openweathermap_api_key=os.getenv('OPENWEATHERMAP_TOKEN'),
+                                bot_api_key=os.getenv('TELEGRAMBOT_TOKEN'),
+                                chat_id=os.getenv('TELEGRAM_CHAT_ID_ME'))
         self.wm.make_schedule(report_time=int(self.user_data['report time']), alert_time=int(10))
+
         # Start to run the schedule
         self.wm.start_thread()
         return
+
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Start the conversation, display any stored data and ask user for input."""
         reply_text = "👋 Hi! Please provide the following information:\n" \
@@ -46,7 +50,6 @@ class UIHandler:
         self.launch_mailer_bot()
         return self.CHOOSING
 
-
     async def regular_choice(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Ask the user for info about the selected predefined choice."""
         text = update.message.text.lower()
@@ -57,7 +60,6 @@ class UIHandler:
             reply_text = f"Enter {text}:"
         await update.message.reply_text(reply_text)
         return self.TYPING_REPLY
-
 
     async def received_information(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Store info provided by user and ask for the next category."""
@@ -86,8 +88,8 @@ class UIHandler:
         self.wm.make_schedule(report_time=int(context.user_data['report time']), alert_time=int(10))
         return self.CHOOSING
 
-
-    async def done(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    @staticmethod
+    async def done(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Display the gathered info and end the conversation."""
         if "choice" in context.user_data:
             del context.user_data["choice"]
