@@ -9,6 +9,7 @@ from telegram.ext import (
     filters,
 )
 from weather_mailer import WeatherMailer
+import re
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -23,15 +24,16 @@ class UIHandler:
         ]
         self.markup = ReplyKeyboardMarkup(self.reply_keyboard, one_time_keyboard=True)
         self.wm = None
-        self.user_data = None
+        self.user_data = {}
+        self._chat_id = None
 
     def launch_mailer_bot(self):
         """Launch the WeatherMailerBot"""
         self.wm = WeatherMailer(city=self.user_data['city'],
                                 openweathermap_api_key=os.getenv('OPENWEATHERMAP_TOKEN'),
                                 bot_api_key=os.getenv('TELEGRAMBOT_TOKEN'),
-                                chat_id=os.getenv('TELEGRAM_CHAT_ID_ME'))
-        self.wm.make_schedule(report_time=int(self.user_data['report time']), alert_time=int(10))
+                                chat_id=self._chat_id)
+        self.wm.make_schedule(report_time=int(10), alert_time=int(10))
 
         # Start to run the schedule
         self.wm.start_thread()
@@ -39,6 +41,7 @@ class UIHandler:
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Start the conversation, display any stored data and ask user for input."""
+        #TODO: check if there are already user setting and print it
         reply_text = "👋 Hi! Please provide the following information:\n" \
                      "🏙️ City\n" \
                      "⏰️ Weather report time\n" \
@@ -46,9 +49,27 @@ class UIHandler:
         await update.message.reply_text(reply_text, reply_markup=self.markup)
 
         # Start the MailerBot
-        self.user_data = context.user_data
+        # Set default values if there is no user settnigs
+        self.user_data['city'] = context.user_data.get('city', 'London')
+        self.user_data['report time'] = context.user_data.get('report time', 10)
+        self.user_data['alert time'] = context.user_data.get('alert time', '08:30')
+        self._chat_id = update.message.chat_id
         self.launch_mailer_bot()
         return self.CHOOSING
+
+# TODO: make /stop command
+    async def stop(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        """Stop bot to send the wheather reports."""
+        # reply_text = "👋 Hi! Please provide the following information:\n" \
+        #              "🏙️ City\n" \
+        #              "⏰️ Weather report time\n" \
+        #              "☂️ Umbrella alert time"
+        # await update.message.reply_text(reply_text, reply_markup=self.markup)
+
+        #self.wm.thread
+
+        return self.CHOOSING
+
 
     async def regular_choice(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Ask the user for info about the selected predefined choice."""
@@ -66,27 +87,11 @@ class UIHandler:
         text = update.message.text
         category = context.user_data["choice"]
         ##########
-        # TODO Check if input is relevant
-        # if text.isdigit():
-        #     context.user_data[category] = text.lower()
-        # else:
-        #     reply_message = "I do not understand it. Please try to specify the time again (e.g. 08:00)"
-        #     await update.message.reply_text(reply_text, reply_markup=self.markup)
-        #     return self.CHOOSING
-        ##########
-        context.user_data[category] = text.lower()
-        del context.user_data["choice"]
-
-        reply_text = f"Configuration:\n" \
-                     f"City: {context.user_data['city']}\n" \
-                     f"Report time: {context.user_data['report time']}\n" \
-                     f"Alert time: {context.user_data['alert time']}"
-        await update.message.reply_text(reply_text, reply_markup=self.markup)
-
-        # Update the settings in the MailerBot
-        self.wm.city = context.user_data['city']
-        self.wm.make_schedule(report_time=int(context.user_data['report time']), alert_time=int(10))
-        return self.CHOOSING
+        # TODO Check if city input is relevant
+        if category == "city":
+            return await self._handle_city_input(category, text, update, context)
+        elif category == "report time" or category == "alert time":
+            return await self._handle_time_input(category, text, update, context)
 
     @staticmethod
     async def done(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -99,6 +104,47 @@ class UIHandler:
             reply_markup=ReplyKeyboardRemove(),
         )
         return ConversationHandler.END
+
+    @staticmethod
+    def _is_time_format(s):
+        """Check if s is in format between[00:00 - 23:59]"""
+        time_re = re.compile(r'^(([01]\d|2[0-3]):([0-5]\d)|23:59)$')
+        return bool(time_re.match(s))
+
+    async def _handle_city_input(self, category, text, update, context):
+        context.user_data[category] = text.lower()
+        del context.user_data["choice"]
+
+        self.user_data[category] = context.user_data[category]
+        reply_text = f"Configuration:\n" \
+                     f"City: {self.user_data['city']}\n" \
+                     f"Report time: {self.user_data['report time']}\n" \
+                     f"Alert time: {self.user_data['alert time']}"
+        await update.message.reply_text(reply_text, reply_markup=self.markup)
+
+        # Update the settings in the MailerBot
+        self.wm.city = self.user_data['city']
+        return self.CHOOSING
+
+    async def _handle_time_input(self, category, text, update, context):
+        if not self._is_time_format(text):
+            reply_text = "Please specify the time again between 00:00 - 23:59 (e.g. 08:00)"
+            await update.message.reply_text(reply_text, reply_markup=self.markup)
+            return self.CHOOSING
+
+        context.user_data[category] = text.lower()
+        del context.user_data["choice"]
+
+        self.user_data[category] = context.user_data[category]
+        reply_text = f"Configuration:\n" \
+                     f"City: {self.user_data['city']}\n" \
+                     f"Report time: {self.user_data['report time']}\n" \
+                     f"Alert time: {self.user_data['alert time']}"
+        await update.message.reply_text(reply_text, reply_markup=self.markup)
+
+        # Update the settings in the MailerBot
+        self.wm.make_schedule(report_time=int(self.user_data['report time']), alert_time=self.user_data['report time'])
+        return self.CHOOSING
 
 
 class UIBuilder:

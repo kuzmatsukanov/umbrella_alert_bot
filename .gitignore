@@ -7,3 +7,4 @@ weather_emoji_dict.json
 __pycache__/
 Draft.py
 conversationbot
+/.handler-saves/

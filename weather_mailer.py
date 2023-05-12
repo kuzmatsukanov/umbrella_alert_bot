@@ -1,6 +1,6 @@
 import telebot
 import schedule
-from threading import Thread
+from threading import Thread, Event
 from time import sleep
 from openweathermap_parser import OpenweathermapParser
 from plot_weather_graph import PlotBuilder
@@ -25,6 +25,7 @@ class WeatherMailer:
         self.plot_path = None
         self.scheduler = schedule.Scheduler()
         self.thread = Thread(target=self.schedule_checker)
+        self._stop_flag = Event()
 
     def send_weather_forecast(self):
         """
@@ -63,6 +64,7 @@ class WeatherMailer:
         Checks the `schedule` library for pending jobs.
         """
         while True:
+        #while not self._stop_flag.is_set():
             self.scheduler.run_pending()
             sleep(time_step)
 
