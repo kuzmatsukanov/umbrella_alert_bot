@@ -8,15 +8,19 @@ from telegram.ext import (
     PicklePersistence,
     filters,
 )
+from openweathermap_parser import OpenweathermapParser
 from weather_mailer import WeatherMailer
+import json
 import re
 import os
+from logger import logger
 from dotenv import load_dotenv
 load_dotenv()
 
 
 class UIHandler:
-    def __init__(self):
+    def __init__(self, openweathermap_api_key):
+        self._openweathermap_api_key = openweathermap_api_key
         self.CHOOSING, self.TYPING_REPLY, self.TYPING_CHOICE = range(3)
         self.reply_keyboard = [
             ["City", "Report time", "Alert time"],
@@ -29,7 +33,8 @@ class UIHandler:
 
     def launch_mailer_bot(self):
         """Launch the WeatherMailerBot"""
-        self.wm = WeatherMailer(city=self.user_data['city'],
+        self.wm = WeatherMailer(city='london',
+                                #city=self.user_data['city'],
                                 openweathermap_api_key=os.getenv('OPENWEATHERMAP_TOKEN'),
                                 bot_api_key=os.getenv('TELEGRAMBOT_TOKEN'),
                                 chat_id=self._chat_id)
@@ -103,6 +108,17 @@ class UIHandler:
         return bool(time_re.match(s))
 
     async def _handle_city_input(self, category, text, update, context):
+        # Check if City name is relevant
+        owmparser = OpenweathermapParser(city=text, api_key=self._openweathermap_api_key)
+        response = owmparser.request_openweathermap_by_city()
+        response_text_dict = json.loads(response.text)
+        if response_text_dict['cod'] == "404":
+            logger.error(f"Failed to find the input city: {text}")
+            reply_text = "City is not found. Please try again or choose location"
+            await update.message.reply_text(reply_text, reply_markup=self.markup)
+            return self.CHOOSING
+
+        # Update the user settings
         context.user_data[category] = text.lower()
         del context.user_data["choice"]
 
@@ -139,9 +155,9 @@ class UIHandler:
 
 
 class UIBuilder:
-    def __init__(self, bot_api_key):
+    def __init__(self, bot_api_key, openweathermap_api_key):
         # Get setting of converstation handler
-        self.ui = UIHandler()
+        self.ui = UIHandler(openweathermap_api_key)
 
         # Create the Application and pass it your bot's token.
         self.persistence = PicklePersistence(filepath="conversationbot")

@@ -1,5 +1,5 @@
 import matplotlib as mpl
-mpl.use('Agg') # headless mode
+mpl.use('Agg')  # headless mode
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from scipy.interpolate import CubicSpline

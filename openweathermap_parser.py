@@ -1,4 +1,5 @@
 import requests
+import json
 from logger import logger
 
 
@@ -11,54 +12,71 @@ class OpenweathermapParser:
         """
         self.city = city
         self._api_key = api_key
-        self.weather_forecast = None
-        self.weather_dict = None
-        self.request_weather_data()
-        self.get_weather_dict()
 
-    def request_weather_data(self, max_attempts=10):
+    def _make_url_get_weather_by_city(self):
+        """
+        Make URL for API request to openweathermap.org data for given city
+        :return: (str) url
+        """
+        url = 'http://api.openweathermap.org/data/2.5/forecast?q={}&appid={}&units=metric'.\
+            format(self.city, self._api_key)
+        return url
+
+    def request_openweathermap_by_city(self):
+        url = self._make_url_get_weather_by_city()
+        response = requests.get(url)
+        return response
+
+    def _request_weather_data(self, max_attempts=10):
         """
         Requests weather data from the OpenWeatherMap API.
         :param max_attempts: int, maximum number of attempts to make the request (default=10)
         :return: dict, weather data or None
         """
-        self.weather_forecast = None
         for attempt in range(1, max_attempts):
-            try:
-                url = 'http://api.openweathermap.org/data/2.5/forecast?q={}&appid={}&units=metric'.format(self.city,
-                                                                                                          self._api_key)
-                response = requests.get(url)
-                self.weather_forecast = response.json()
-                logger.info("Successfully fetched weather forecast on attempt {}".format(attempt))
-                return
-            except requests.exceptions.RequestException as e:
-                logger.warning(f"Attempt {attempt}: Failed to fetch weather forecast. Error message: {e}")
-                continue
-        logger.error("Failed to fetch weather forecast after {} attempts.".format(max_attempts))
+            # Request OpenWeatherMap API
+            response = self.request_openweathermap_by_city()
+            response_text_dict = json.loads(response.text)
+
+            # Check and parse the response
+ #TODO: add API key error {'cod': 401, 'message': 'Invalid API key. Please see https://openweathermap.org/faq#error401 for more info.'}
+            if response_text_dict['cod'] == "200":
+                weather_forecast = response.json()
+                logger.info(f"Successfully fetched weather forecast on attempt {attempt}")
+                return weather_forecast
+            elif response_text_dict['cod'] == "404":
+                if response_text_dict['message'] == "city not found":
+                    logger.error(f"Failed to request city: {self.city}")
+                    return None
+            else:
+                logger.warning(f"Attempt {attempt}: Failed to fetch weather forecast. Response text: {response.text}")
+        return None
 
     def get_weather_dict(self):
         """
         Extracts relevant weather data from the current weather forecast
         :return: dict, dictionary containing weather data for the first 7 time steps (3 hours each) or None.
         """
-        if self.weather_forecast is None:
+        weather_data = self._request_weather_data()
+        if weather_data is None:
             return None
-        weather_ts = self.weather_forecast['list'][0:7]
-        self.weather_dict = {
+        weather_ts = weather_data['list'][0:7]
+        weather_dict = {
             'temp_ts': [],
             'temp_feels_like_ts': [],
             'time_ts': [],
             'icon_ts': [],
             'main': [],
             'description': [],
-            'time_sunrise': self.weather_forecast['city']['sunrise'],
-            'time_sunset': self.weather_forecast['city']['sunset'],
-            'city': self.weather_forecast['city']['name']
+            'time_sunrise': weather_data['city']['sunrise'],
+            'time_sunset': weather_data['city']['sunset'],
+            'city': weather_data['city']['name']
         }
         for weather in weather_ts:
-            self.weather_dict['temp_ts'].append(weather['main']['temp'])
-            self.weather_dict['temp_feels_like_ts'].append(weather['main']['feels_like'])
-            self.weather_dict['time_ts'].append(weather['dt'])
-            self.weather_dict['icon_ts'].append(weather['weather'][0]['icon'])
-            self.weather_dict['main'].append(weather['weather'][0]['main'])
-            self.weather_dict['description'].append(weather['weather'][0]['description'])
+            weather_dict['temp_ts'].append(weather['main']['temp'])
+            weather_dict['temp_feels_like_ts'].append(weather['main']['feels_like'])
+            weather_dict['time_ts'].append(weather['dt'])
+            weather_dict['icon_ts'].append(weather['weather'][0]['icon'])
+            weather_dict['main'].append(weather['weather'][0]['main'])
+            weather_dict['description'].append(weather['weather'][0]['description'])
+        return weather_dict

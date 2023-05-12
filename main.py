@@ -6,7 +6,7 @@ load_dotenv()
 
 def main():
     """Run the bot."""
-    ui = UIBuilder(os.getenv('TELEGRAMBOT_TOKEN'))
+    ui = UIBuilder(os.getenv('TELEGRAMBOT_TOKEN'), os.getenv('OPENWEATHERMAP_TOKEN'))
     ui.application.run_polling()
 
 

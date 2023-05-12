@@ -33,7 +33,9 @@ class WeatherMailer:
         Request weather from openweathermap.org and send the report
         """
         # Get weather forecast and build plot
-        self.weather_dict = OpenweathermapParser(city=self.city, api_key=self.openweathermap_api_key).weather_dict
+        owmparser = OpenweathermapParser(city=self.city, api_key=self.openweathermap_api_key)
+        self.weather_dict = owmparser.get_weather_dict()
+
         self.plot_path = PlotBuilder(self.weather_dict).plot_weather_ts()
         with open(self.plot_path, 'rb') as f:
             self.bot.send_photo(self.chat_id, f, caption="Have a nice day!", disable_notification=True)
