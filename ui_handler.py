@@ -45,18 +45,23 @@ class UIHandler:
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Start the conversation, display any stored data and ask user for input."""
-        # TODO: check if there are already user setting and print it
-        reply_text = "👋 Hi! Please provide the following information:\n" \
-                     "🏙️ City\n" \
-                     "⏰️ Weather report time\n" \
-                     "☂️ Umbrella alert time"
-        await update.message.reply_text(reply_text, reply_markup=self.markup)
-
-        # Start the MailerBot
         # Set default values if there is no user settnigs
         self.user_data['city'] = context.user_data.get('city', 'London')
         self.user_data['report time'] = context.user_data.get('report time', 10)
         self.user_data['alert time'] = context.user_data.get('alert time', '08:30')
+
+        # Start the conversation
+        reply_text = \
+            "👋 Welcome to our daily weather forecast bot! I will send you a weather report every morning and" \
+            "remind you to bring an umbrella if needed. " \
+            "Please provide your settings for the following parameters:\n" \
+            f"🏙️ City: {self.user_data['city']}\n" \
+            f"⏰️ Report time: {self.user_data['report time']}\n" \
+            f"☂️ Umbrella alert time: {self.user_data['alert time']}\n\n" \
+            "To update your settings, use the menu buttons below. If you need help, use the '/help' command."
+        await update.message.reply_text(reply_text, reply_markup=self.markup)
+
+        # Start the MailerBot
         self._chat_id = update.message.chat_id
         self.launch_mailer_bot()
         return self.CHOOSING
@@ -81,8 +86,6 @@ class UIHandler:
         """Store info provided by user and ask for the next category."""
         text = update.message.text
         category = context.user_data["choice"]
-        ##########
-        # TODO Check if city input is relevant
         if category == "city":
             return await self._handle_city_input(category, text, update, context)
         elif category == "report time" or category == "alert time":
