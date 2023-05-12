@@ -33,8 +33,7 @@ class UIHandler:
 
     def launch_mailer_bot(self):
         """Launch the WeatherMailerBot"""
-        self.wm = WeatherMailer(city='london',
-                                #city=self.user_data['city'],
+        self.wm = WeatherMailer(city=self.user_data['city'],
                                 openweathermap_api_key=os.getenv('OPENWEATHERMAP_TOKEN'),
                                 bot_api_key=os.getenv('TELEGRAMBOT_TOKEN'),
                                 chat_id=self._chat_id)
@@ -103,7 +102,11 @@ class UIHandler:
 
     @staticmethod
     def _is_time_format(s):
-        """Check if s is in format between[00:00 - 23:59]"""
+        """
+        Check if s is in format between[00:00 - 23:59]
+        :param s: (str)
+        :return: (bool)
+        """
         time_re = re.compile(r'^(([01]\d|2[0-3]):([0-5]\d)|23:59)$')
         return bool(time_re.match(s))
 
@@ -112,7 +115,12 @@ class UIHandler:
         owmparser = OpenweathermapParser(city=text, api_key=self._openweathermap_api_key)
         response = owmparser.request_openweathermap_by_city()
         response_text_dict = json.loads(response.text)
-        if response_text_dict['cod'] == "404":
+        if response_text_dict['cod'] == "401":
+            logger.error(response_text_dict['message'])
+            reply_text = "Sorry, technical problems"
+            await update.message.reply_text(reply_text, reply_markup=self.markup)
+            return self.CHOOSING
+        elif response_text_dict['cod'] == "404":
             logger.error(f"Failed to find the input city: {text}")
             reply_text = "City is not found. Please try again or choose location"
             await update.message.reply_text(reply_text, reply_markup=self.markup)

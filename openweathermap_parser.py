@@ -39,15 +39,16 @@ class OpenweathermapParser:
             response_text_dict = json.loads(response.text)
 
             # Check and parse the response
- #TODO: add API key error {'cod': 401, 'message': 'Invalid API key. Please see https://openweathermap.org/faq#error401 for more info.'}
             if response_text_dict['cod'] == "200":
                 weather_forecast = response.json()
                 logger.info(f"Successfully fetched weather forecast on attempt {attempt}")
                 return weather_forecast
+            elif response_text_dict['cod'] == "401":
+                logger.error(response_text_dict['message'])
+                return None
             elif response_text_dict['cod'] == "404":
-                if response_text_dict['message'] == "city not found":
-                    logger.error(f"Failed to request city: {self.city}")
-                    return None
+                logger.error(f"Failed to request city: {self.city}")
+                return None
             else:
                 logger.warning(f"Attempt {attempt}: Failed to fetch weather forecast. Response text: {response.text}")
         return None
