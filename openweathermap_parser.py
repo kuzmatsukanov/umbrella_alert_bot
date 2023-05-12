@@ -71,7 +71,8 @@ class OpenweathermapParser:
             'description': [],
             'time_sunrise': weather_data['city']['sunrise'],
             'time_sunset': weather_data['city']['sunset'],
-            'city': weather_data['city']['name']
+            'city': weather_data['city']['name'],
+            'country': weather_data['city']['country']
         }
         for weather in weather_ts:
             weather_dict['temp_ts'].append(weather['main']['temp'])

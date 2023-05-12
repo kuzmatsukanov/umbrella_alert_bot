@@ -62,9 +62,9 @@ class PlotBuilder:
         ax.set_xlabel('Time, h')
         ax.set_ylabel('Temperature, °C')
         ax.legend(loc='upper right', fancybox=True, framealpha=0.5)
-        ax.set_title(
-            self.weather_dict['city'] + ', ' + datetime.fromtimestamp(self.weather_dict['time_sunrise']).strftime(
-                "%d %B %Y"))
+        title_date = datetime.fromtimestamp(self.weather_dict['time_sunrise']).strftime("%d %B %Y")
+        title = f"{self.weather_dict['city']}, {self.weather_dict['country']}, {title_date}"
+        ax.set_title(title)
 
         # Label the x_axis
         hour_label_lst = [datetime.fromtimestamp(timestamp).strftime('%H:00') for timestamp in
