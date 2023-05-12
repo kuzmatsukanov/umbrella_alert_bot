@@ -41,7 +41,7 @@ class UIHandler:
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Start the conversation, display any stored data and ask user for input."""
-        #TODO: check if there are already user setting and print it
+        # TODO: check if there are already user setting and print it
         reply_text = "👋 Hi! Please provide the following information:\n" \
                      "🏙️ City\n" \
                      "⏰️ Weather report time\n" \
@@ -57,19 +57,10 @@ class UIHandler:
         self.launch_mailer_bot()
         return self.CHOOSING
 
-# TODO: make /stop command
     async def stop(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Stop bot to send the wheather reports."""
-        # reply_text = "👋 Hi! Please provide the following information:\n" \
-        #              "🏙️ City\n" \
-        #              "⏰️ Weather report time\n" \
-        #              "☂️ Umbrella alert time"
-        # await update.message.reply_text(reply_text, reply_markup=self.markup)
-
-        #self.wm.thread
-
-        return self.CHOOSING
-
+        self.wm.stop_thread()
+        return await self.done(update, context)
 
     async def regular_choice(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Ask the user for info about the selected predefined choice."""
@@ -164,6 +155,7 @@ class UIBuilder:
                     MessageHandler(
                         filters.Regex("^(City|Report time|Alert time)$"), self.ui.regular_choice
                     ),
+                    CommandHandler("stop", self.ui.stop),
                 ],
                 self.ui.TYPING_CHOICE: [
                     MessageHandler(
