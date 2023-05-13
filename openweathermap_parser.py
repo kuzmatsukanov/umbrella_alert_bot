@@ -18,8 +18,7 @@ class OpenweathermapParser:
         Make URL for API request to openweathermap.org data for given city
         :return: (str) url
         """
-        url = 'http://api.openweathermap.org/data/2.5/forecast?q={}&appid={}&units=metric'.\
-            format(self.city, self._api_key)
+        url = f"http://api.openweathermap.org/data/2.5/forecast?q={self.city}&appid={self._api_key}&units=metric"
         return url
 
     def request_openweathermap_by_city(self):

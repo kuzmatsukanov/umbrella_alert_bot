@@ -19,7 +19,8 @@ load_dotenv()
 
 
 class UIHandler:
-    def __init__(self, openweathermap_api_key):
+    def __init__(self, bot_api_key, openweathermap_api_key):
+        self._bot_api_key = bot_api_key
         self._openweathermap_api_key = openweathermap_api_key
         self.CHOOSING, self.TYPING_REPLY, self.TYPING_CHOICE = range(3)
         self.reply_keyboard = [
@@ -34,10 +35,11 @@ class UIHandler:
     def launch_mailer_bot(self):
         """Launch the WeatherMailerBot"""
         self.wm = WeatherMailer(city=self.user_data['city'],
-                                openweathermap_api_key=os.getenv('OPENWEATHERMAP_TOKEN'),
-                                bot_api_key=os.getenv('TELEGRAMBOT_TOKEN'),
+                                openweathermap_api_key=self._openweathermap_api_key,
+                                bot_api_key=self._bot_api_key,
                                 chat_id=self._chat_id)
-        self.wm.make_schedule(report_time=int(10), alert_time=int(10))
+        self.wm.make_schedule(report_time=self.user_data['report time'],
+                              alert_time=self.user_data['alert time'])
 
         # Start to run the schedule
         self.wm.start_thread()
@@ -47,18 +49,18 @@ class UIHandler:
         """Start the conversation, display any stored data and ask user for input."""
         # Set default values if there is no user settnigs
         self.user_data['city'] = context.user_data.get('city', 'London')
-        self.user_data['report time'] = context.user_data.get('report time', 10)
+        self.user_data['report time'] = context.user_data.get('report time', '08:00')
         self.user_data['alert time'] = context.user_data.get('alert time', '08:30')
 
         # Start the conversation
         reply_text = \
-            "👋 Welcome to our daily weather forecast bot! I will send you a weather report every morning and" \
+            "👋 Welcome to the daily weather forecast bot! I will send you a weather report every morning and" \
             "remind you to bring an umbrella if needed. " \
             "Please provide your settings for the following parameters:\n" \
             f"🏙️ City: {self.user_data['city']}\n" \
             f"⏰️ Report time: {self.user_data['report time']}\n" \
             f"☂️ Umbrella alert time: {self.user_data['alert time']}\n\n" \
-            "To update your settings, use the menu buttons below. If you need help, use the '/help' command."
+            "To update your settings, use the menu buttons below."
         await update.message.reply_text(reply_text, reply_markup=self.markup)
 
         # Start the MailerBot
@@ -75,10 +77,7 @@ class UIHandler:
         """Ask the user for info about the selected predefined choice."""
         text = update.message.text.lower()
         context.user_data["choice"] = text
-        if context.user_data.get(text):
-            reply_text = f"Enter {text} (current: {context.user_data[text]}):"
-        else:
-            reply_text = f"Enter {text}:"
+        reply_text = f"Enter {text} (current: {self.user_data[text]}):"
         await update.message.reply_text(reply_text)
         return self.TYPING_REPLY
 
@@ -161,14 +160,15 @@ class UIHandler:
         await update.message.reply_text(reply_text, reply_markup=self.markup)
 
         # Update the settings in the MailerBot
-        self.wm.make_schedule(report_time=int(self.user_data['report time']), alert_time=self.user_data['report time'])
+        self.wm.make_schedule(report_time=self.user_data['report time'],
+                              alert_time=self.user_data['alert time'])
         return self.CHOOSING
 
 
 class UIBuilder:
     def __init__(self, bot_api_key, openweathermap_api_key):
         # Get setting of converstation handler
-        self.ui = UIHandler(openweathermap_api_key)
+        self.ui = UIHandler(bot_api_key, openweathermap_api_key)
 
         # Create the Application and pass it your bot's token.
         self.persistence = PicklePersistence(filepath="conversationbot")

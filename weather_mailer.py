@@ -44,7 +44,7 @@ class WeatherMailer:
         """
         Send alert if rain is going to be
         """
-        if any(w not in self.weather_dict['main'] for w in ["Rain", "Thunderstorm", "Drizzle"]):
+        if any(w in self.weather_dict['main'] for w in ["Rain", "Thunderstorm", "Drizzle"]):
             self.bot.send_message(self.chat_id,
                                   "☔️☂️Looks like it's going to rain today, don't forget to bring an umbrella!",
                                   disable_notification=False)
@@ -55,12 +55,11 @@ class WeatherMailer:
         :param report_time: str, time of weather report e.g. "08:00"
         :param alert_time: str, time of rain alert e.g. "08:30"
         """
-        # schedule.every().day.at(report_time).do(self.send_weather_forecast)
-        # schedule.every().day.at(alert_time).do(self.alert_umbrella)
         self.scheduler.clear()
-        self.scheduler.every(report_time).seconds.do(self.send_weather_forecast)
-        self.scheduler.every(report_time).seconds.do(self.alert_umbrella)
-        # TODO: to set correct schedule
+        self.scheduler.every().day.at(report_time).do(self.send_weather_forecast)
+        self.scheduler.every().day.at(alert_time).do(self.alert_umbrella)
+        # self.scheduler.every(10).seconds.do(self.send_weather_forecast)
+        # self.scheduler.every(10).seconds.do(self.alert_umbrella)
 
     def schedule_checker(self, time_step=1):
         """

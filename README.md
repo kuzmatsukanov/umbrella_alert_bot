@@ -14,6 +14,7 @@ To run this project, you need to have the following:
 - `main.py` Set up and run the bot.
 - `openweathermap_parser.py` Request weather data from openweathermap.org and parse it.
 - `plot_weather_graph.py` Make a plot with weather forecast.
+- `ui_handler.py` Build and handle UI
 - `weather_mailer.py` Send via Telegram a weather forecast and alert about umbrella.
 
 ## Usage

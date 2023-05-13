@@ -44,7 +44,7 @@ class PlotBuilder:
         :param icon_id: str, e.g. '02n'
         :return: (np.array), image of the icon
         """
-        img_url = 'https://openweathermap.org/img/wn/{}@2x.png'.format(icon_id)
+        img_url = f'https://openweathermap.org/img/wn/{icon_id}@2x.png'
         with urllib.request.urlopen(img_url) as url:
             img_data = url.read()
         img = np.array(Image.open(io.BytesIO(img_data)))

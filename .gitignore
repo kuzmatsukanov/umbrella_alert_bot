@@ -6,5 +6,6 @@ weather.png
 weather_emoji_dict.json
 __pycache__/
 Draft.py
+Draft2.py
 conversationbot
 /.handler-saves/
