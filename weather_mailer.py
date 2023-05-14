@@ -11,7 +11,7 @@ class WeatherMailer:
     """
     Mailer of weather data via Telegram using the OpenWeatherMap API.
     """
-    def __init__(self, city, openweathermap_api_key, bot_api_key, chat_id):
+    def __init__(self, city, lat, lon, openweathermap_api_key, bot_api_key, chat_id):
         """
         :param city: str, the name of the city for which weather data will be retrieved.
         :param openweathermap_api_key: str, The API key for the OpenWeatherMap service
@@ -19,6 +19,8 @@ class WeatherMailer:
         :param chat_id: The ID of the Telegram chat where weather data will be sent
         """
         self.city = city
+        self.lat = lat
+        self.lon = lon
         self.openweathermap_api_key = openweathermap_api_key
         self.bot = telebot.TeleBot(bot_api_key)
         self.chat_id = chat_id
@@ -33,8 +35,8 @@ class WeatherMailer:
         Request weather from openweathermap.org and send the report
         """
         # Get weather forecast and build plot
-        owmparser = OpenweathermapParser(city=self.city, api_key=self.openweathermap_api_key)
-        self.weather_dict = owmparser.get_weather_dict()
+        owmparser = OpenweathermapParser(api_key=self.openweathermap_api_key)
+        self.weather_dict = owmparser.get_weather_dict(self.lat, self.lon)
 
         self.plot_path = PlotBuilder(self.weather_dict).plot_weather_ts()
         with open(self.plot_path, 'rb') as f:
@@ -44,10 +46,13 @@ class WeatherMailer:
         """
         Send alert if rain is going to be
         """
-        if any(w in self.weather_dict['main'] for w in ["Rain", "Thunderstorm", "Drizzle"]):
-            self.bot.send_message(self.chat_id,
-                                  "☔️☂️Looks like it's going to rain today, don't forget to bring an umbrella!",
-                                  disable_notification=False)
+        try:
+            if any(w in self.weather_dict['main'] for w in ["Rain", "Thunderstorm", "Drizzle"]):
+                self.bot.send_message(self.chat_id,
+                                      "☔️☂️Looks like it's going to rain today, don't forget to bring an umbrella!",
+                                      disable_notification=False)
+        except KeyError as e:
+            logger.error({e})
 
     def make_schedule(self, report_time, alert_time):
         """
