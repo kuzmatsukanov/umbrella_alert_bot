@@ -57,10 +57,10 @@ class UIHandler:
 
         # Start the conversation
         reply_text = \
-            "👋 Welcome to the daily weather forecast bot! I will send you a weather report every morning and" \
+            "👋 Welcome to the daily weather forecast bot! I will send you a weather report every morning and " \
             "remind you to bring an umbrella if needed. " \
             "Please provide your settings for the following parameters:\n" \
-            f"🏙️ City: {context.user_data['city']}\n" \
+            f"🏙️ City: {context.user_data['city']}, {context.user_data['country']}\n" \
             f"⏰️ Report time: {context.user_data['report time']}\n" \
             f"☂️ Umbrella alert time: {context.user_data['alert time']}\n\n" \
             "To update your settings, use the menu buttons below."
